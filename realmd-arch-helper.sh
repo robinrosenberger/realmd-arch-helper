@@ -20,29 +20,27 @@ session optional pam_sss.so
 EOF
 unset pam
 grep sssd-arch /etc/pam.d/system-auth > /dev/null && pam=1
-[ $pam ] && echo "SSSD for PAM already enabled" && exit 0
-sed -i '2 i session include sssd-arch' /etc/pam.d/system-auth
-sed -i '2 i password include sssd-arch' /etc/pam.d/system-auth
-sed -i '2 i auth include sssd-arch' /etc/pam.d/system-auth
-echo Enabled SSSD in PAM
+[ $pam ] && echo "SSSD for PAM already enabled"
+[ ! $pam ] && sed -i '2 i session include sssd-arch' /etc/pam.d/system-auth
+[ ! $pam ] && sed -i '2 i password include sssd-arch' /etc/pam.d/system-auth
+[ ! $pam ] && sed -i '2 i auth include sssd-arch' /etc/pam.d/system-auth
+grep sssd-arch /etc/pam.d/system-auth > /dev/null && pam=1
+[ $pam ] && echo Enabled SSSD in PAM
 
 unset nss
-grep sss /etc/nsswitch.conf > /dev/null && pam=1
-[ $pam ] && echo SSSD already enables in NSS
-sed -i '/passwd:/s/$/ sss/' /etc/nsswitch.conf
-sed -i '/group:/s/$/ sss/' /etc/nsswitch.conf
-sed -i '/shadow:/s/$/ sss/' /etc/nsswitch.conf
-echo Enabled SSSD in NSS
+grep sss /etc/nsswitch.conf > /dev/null && nss=1
+[ $nss ] && echo SSSD already enabled in NSS
+[ ! $nss ] && sed -i '/passwd:/s/$/ sss/' /etc/nsswitch.conf
+[ ! $nss ] && sed -i '/group:/s/$/ sss/' /etc/nsswitch.conf
+[ ! $nss ] && sed -i '/shadow:/s/$/ sss/' /etc/nsswitch.conf
+grep sss /etc/nsswitch.conf > /dev/null && nss=1
+[ $nss ] && echo Enabled SSSD in NSS
 
 ;;
 
 --disable-pam-nss)
 sed -i '/sssd-arch/d' /etc/pam.d/system-auth
 sed -i 's/sss//g' /etc/nsswitch.conf
-;;
---enable-nss)
-;;
---disable-nss)
 ;;
 
 *)
