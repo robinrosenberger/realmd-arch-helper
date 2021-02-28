@@ -1,0 +1,58 @@
+#!/bin/bash
+case $1 in
+--patch-config)
+unset patched
+grep realmd-arch-helper.sh /usr/lib/realmd/realmd-distro.conf > /dev/null && patched=1
+[ $patched ] && echo Realmd-config already patched && exit 0
+cp $0 /usr/local/sbin/
+sed -i '/commands/a sssd-enable-logins = /usr/local/sbin/realmd-arch-helper.sh --enable-pam-nss' /usr/lib/realmd/realmd-distro.conf
+sed -i '/commands/a sssd-disable-logins = /usr/local/sbin/realmd-arch-helper.sh --disable-pam-nss' /usr/lib/realmd/realmd-distro.conf
+sed -i '/commands/a sssd-enable-service = /usr/bin/systemctl enable sssd' /usr/lib/realmd/realmd-distro.conf
+sed -i '/commands/a sssd-disable-service = /usr/bin/systemctl disable sssd' /usr/lib/realmd/realmd-distro.conf
+
+;;
+--enable-pam-nss)
+cat << EOF > /etc/pam.d/sssd-arch
+auth sufficient pam_sss.so forward_pass
+password sufficient pam_sss.so use_authtok
+session required pam_mkhomedir.so skel=/etc/skel/ umask=0077
+session optional pam_sss.so
+EOF
+unset pam
+grep sssd-arch /etc/pam.d/system-auth > /dev/null && pam=1
+[ $pam ] && echo "SSSD for PAM already enabled" && exit 0
+sed -i '2 i session include sssd-arch' /etc/pam.d/system-auth
+sed -i '2 i password include sssd-arch' /etc/pam.d/system-auth
+sed -i '2 i auth include sssd-arch' /etc/pam.d/system-auth
+echo Enabled SSSD in PAM
+
+unset nss
+grep sss /etc/nsswitch.conf > /dev/null && pam=1
+[ $pam ] && echo SSSD already enables in NSS
+sed -i '/passwd:/s/$/ sss/' /etc/nsswitch.conf
+sed -i '/group:/s/$/ sss/' /etc/nsswitch.conf
+sed -i '/shadow:/s/$/ sss/' /etc/nsswitch.conf
+echo Enabled SSSD in NSS
+
+;;
+
+--disable-pam-nss)
+sed -i '/sssd-arch/d' /etc/pam.d/system-auth
+sed -i 's/sss//g' /etc/nsswitch.conf
+;;
+--enable-nss)
+;;
+--disable-nss)
+;;
+
+*)
+cat << EOF
+Script to prepare realmd and realmd-git AUR packages to succesfully join a domain.
+Run with --patch-config before joining
+Valid options:
+--patch-config
+--enable-pam-nss
+--disable-pam-nss
+EOF
+;;
+esac
