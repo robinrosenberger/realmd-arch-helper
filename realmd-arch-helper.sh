@@ -9,7 +9,8 @@ sed -i '/commands/a sssd-enable-logins = /usr/local/sbin/realmd-arch-helper.sh -
 sed -i '/commands/a sssd-disable-logins = /usr/local/sbin/realmd-arch-helper.sh --disable-pam-nss' /usr/lib/realmd/realmd-distro.conf
 sed -i '/commands/a sssd-enable-service = /usr/bin/systemctl enable sssd' /usr/lib/realmd/realmd-distro.conf
 sed -i '/commands/a sssd-disable-service = /usr/bin/systemctl disable sssd' /usr/lib/realmd/realmd-distro.conf
-
+echo Patched realmd-config, restarting sssd
+/usr/bin/systemctl restart sssd
 ;;
 --enable-pam-nss)
 cat << EOF > /etc/pam.d/sssd-arch
